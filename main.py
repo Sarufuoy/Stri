@@ -9,7 +9,7 @@ import uuid
 mydb = connect(
     host="localhost",
     user="root",
-    passwd="saransh2009",
+    passwd="root",
     database="TRAINS")
 cu = mydb.cursor()
 
@@ -295,6 +295,17 @@ class loginpage(tk.Frame):
             "<FocusOut>",
             lambda event: self.hide_dropdown(self.optionslist, None))
 
+        self.loginbg = tk.Label(self,
+                                        padx=0,
+                                        pady=0,
+                                        bg="#34A99D",
+                                        highlightthickness=1,
+                                        highlightbackground="black",
+                                        relief="flat").place(x=530,
+                                                                y=75,
+                                                                width=315,
+                                                                height=390)
+
 
     def select_option(self, event, wid, li):
         selected_item = li.get(tk.ANCHOR)
@@ -328,6 +339,8 @@ class loginpage(tk.Frame):
 
         self.update_menu(filtered_data, li)
         self.show_dropdown(entry, li)
+    
+    
 
 class secondpage(tk.Frame):
     def __init__(self, parent, controller):
