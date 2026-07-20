@@ -5,6 +5,7 @@ import random
 import json
 from PIL import Image, ImageTk, ImageDraw
 import uuid
+import tkinter.font as tkFont
 
 mydb = connect(
     host="localhost",
@@ -305,6 +306,13 @@ class loginpage(tk.Frame):
                                                                 y=75,
                                                                 width=315,
                                                                 height=390)
+        self.boldfont = tkFont.Font(size = 10, weight = "bold")
+        self.loginlb = tk.Label(self,
+                                text="Login / Register",
+                                bg="#34A99D", font = self.boldfont)
+        self.loginlb.place(x=640, y=101)
+        self.userinp = tk.Entry(self)
+        self.userinp.place(x = 620, y = 130)
 
 
     def select_option(self, event, wid, li):
