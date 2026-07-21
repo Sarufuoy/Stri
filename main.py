@@ -6,6 +6,7 @@ import json
 from PIL import Image, ImageTk, ImageDraw
 import uuid
 import tkinter.font as tkFont
+import tkext as tkmisc
 
 mydb = connect(
     host="localhost",
@@ -24,17 +25,16 @@ NAMES OF TABLES USED IN THIS PROJECT ARE:-
 -> ADMINLOGIN - Admin login details
 '''
 
-class basicfunctions:
-    def __init__(self):
-        pass   
-    def getdata(self,
+#--------------MISC--------------#
+class basic:
+    def getdata(
                 type:str, 
                 name: str
                 ):
         cu.execute(f'select {type} from {name}')
         k = cu.fetchall()
         return k
-    def getdatawhere(self,
+    def getdatawhere(
                     type:str, 
                     name:str, 
                     where:str
@@ -42,9 +42,7 @@ class basicfunctions:
         cu.execute(f'select {type} from {name} where {where}')
         k = cu.fetchall()
         return k  
-basic = basicfunctions()
-
-
+#--------------MISC--------------#
 class user:
     def __init__():
         pass
@@ -255,7 +253,12 @@ class loginpage(tk.Frame):
         self.toentry = tk.Entry(self)
         self.toentry.place(x=335, y=115, width=115, height=20)
 
-        self.searchbtn = tk.Button(self, text="Search Trains", relief="groove", bg="#D0DBA9")
+        def search_cmd():
+            if self.froentry.get() == "" or self.toentry.get() == "":
+                mb.showerror(title="Error!", message="No Stations Selected")
+                
+        
+        self.searchbtn = tk.Button(self, text="Search Trains", relief="groove", bg="#D0DBA9", command=lambda: search_cmd())
         self.searchbtn.place(x=230, y=115, height=20, width=100)
         
         self.frolab = tk.Label(self, text="From Station", relief="flat", bg="#76ABAE").place(x=110, y=101, width = 115, height=10)
@@ -310,9 +313,11 @@ class loginpage(tk.Frame):
         self.loginlb = tk.Label(self,
                                 text="Login / Register",
                                 bg="#34A99D", font = self.boldfont)
-        self.loginlb.place(x=640, y=101)
-        self.userinp = tk.Entry(self)
-        self.userinp.place(x = 620, y = 130)
+        self.loginlb.place(x=635, y=101)
+        self.username = tkmisc.PlaceholderEntry(self, placeholder="Username")
+        self.username.place(x = 600, y = 130, width=175)
+        self.password = tkmisc.PlaceholderEntry(self, placeholder="Password")
+        self.password.place(x = 600, y = 160, width=175)
 
 
     def select_option(self, event, wid, li):
