@@ -25,7 +25,8 @@ class PlaceholderEntry(tk.Entry):
             self.delete(0, tk.END)
             self.config(fg=self.default_fg_color)
             self.placeholder_visible = False
-
+    
+    
     def get_value(self):
         if self.placeholder_visible:
             print(f"<No Value At {self} - {self.placeholder}>")
@@ -38,6 +39,6 @@ if __name__ == "__main__":
     root.title("Placeholder Entry Test")
     root.geometry("300x150")
     entry = PlaceholderEntry(root, placeholder="Hello World")
-    entry.place(x=50, y=50)
+    entry.pack()
     tk.Button(root, text="Print", command=lambda: print(entry.get_value())).pack()
     root.mainloop()

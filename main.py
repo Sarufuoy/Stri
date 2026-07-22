@@ -235,14 +235,17 @@ class loginpage(tk.Frame):
                               )
         self.title.place(x=0, y=0)
 
-
-        self.searchbg = tk.Label(self,
+        simg = Image.open('vb.png')
+        self.searchbgimg = ImageTk.PhotoImage(simg)
+        self.searchbg = tk.Label(self, 
+                                 image=self.searchbgimg,
                                  padx=0,
                                  pady=0,
                                  bg="#76ABAE",
                                  highlightthickness=1,
                                  highlightbackground="black",
-                                 relief="flat").place(x=55,
+                                 relief="solid",
+                                 borderwidth=3).place(x=55,
                                                         y=75,
                                                         width=450,
                                                         height=390)
@@ -298,22 +301,26 @@ class loginpage(tk.Frame):
         self.toentry.bind(
             "<FocusOut>",
             lambda event: self.hide_dropdown(self.optionslist, None))
-
-        self.loginbg = tk.Label(self,
+        limg = Image.open("pxArt.png")
+        limg = limg.resize((315,390))
+        self.limg = ImageTk.PhotoImage(limg)
+        self.loginbg = tk.Label(self,   image=self.limg,
                                         padx=0,
                                         pady=0,
-                                        bg="#34A99D",
                                         highlightthickness=1,
                                         highlightbackground="black",
-                                        relief="flat").place(x=530,
-                                                                y=75,
-                                                                width=315,
-                                                                height=390)
+                                        relief="solid",
+                                        borderwidth=2).place(x=530,
+                                                                y=75)
         self.boldfont = tkFont.Font(size = 10, weight = "bold")
         self.loginlb = tk.Label(self,
                                 text="Login / Register",
-                                bg="#34A99D", font = self.boldfont)
-        self.loginlb.place(x=635, y=101)
+                                bg="#34A99D", 
+                                font = self.boldfont, 
+                                anchor="center",
+                                borderwidth=.5,
+                                relief="solid")
+        self.loginlb.place(x=600, y=101, width=175)
         self.username = tkmisc.PlaceholderEntry(self, placeholder="Username")
         self.username.place(x = 600, y = 130, width=175)
         self.password = tkmisc.PlaceholderEntry(self, placeholder="Password")
