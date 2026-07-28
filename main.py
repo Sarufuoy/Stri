@@ -343,7 +343,8 @@ class loginpage(tk.Frame):
                                 text="Login",
                                 borderwidth=.5,
                                 command=lambda: loginuser(self.username.get_value(), self.password.get_value()))
-        self.logbtn.place(x = 600, y = 200, width = 175)
+        self.logbtn.place(x = 600, y = 190, width = 175)
+        
         def registerpopup():
             popup = tk.Toplevel(self)
             popup.title("Register")
@@ -379,6 +380,20 @@ class loginpage(tk.Frame):
                 w = user.register(username.get_value(), password.get_value(), cnpassword.get_value(), phone.get_value(), email.get_value())
                 if w==True:
                     print("Commited")
+                    self.regbtn.place_forget()
+                    self.logbtn.place_forget()
+                    self.username.place_forget()
+                    self.password.place_forget()
+                    self.loginlb.place_forget()
+                    user.login(username.get_value(), password.get_value())
+                    f = basic.getdatawhere("*", "userlogin", f"name='{username.get_value()}'")
+                    name=f[0][0]
+                    mob=f[0][2]
+                    mail=f[0][3]
+                    uid=f[0][4]
+                    self.namelabel=tk.Label(self, text=name.capitalize(), font="bold", anchor="w")
+                    self.namelabel.place(x=570, y=130, width=215)
+                    self.moblabel=tk.Label(self, )
                     popup.grab_release()
                     popup.destroy()
                     
@@ -393,7 +408,7 @@ class loginpage(tk.Frame):
                                 text="Register New User",
                                 borderwidth=.5,
                                 command=registerpopup)
-        self.regbtn.place(x=600, y=230, width=175)
+        self.regbtn.place(x=600, y=220, width=175)
         
     def select_option(self, event, wid, li):
         selected_item = li.get(tk.ANCHOR)
