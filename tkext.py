@@ -32,13 +32,3 @@ class PlaceholderEntry(tk.Entry):
             print(f"<No Value At {self} - {self.placeholder}>")
             return ""
         return self.get()
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Placeholder Entry Test")
-    root.geometry("300x150")
-    entry = PlaceholderEntry(root, placeholder="Hello World")
-    entry.pack()
-    tk.Button(root, text="Print", command=lambda: print(entry.get_value())).pack()
-    root.mainloop()

@@ -44,13 +44,10 @@ class basic:
         return k  
 #--------------MISC--------------#
 class user:
-    def __init__():
-        pass
-    
     def login(user:str, 
               password:str
               ):
-        cu.execute('select log from userlogin')
+        cu.execute('select log from userlogin where name = %s', (user,))
         status = cu.fetchall()
         for i in status:
             if status == []:
@@ -75,9 +72,10 @@ class user:
             cu.execute(f'select * from userlogin where name = "{user}"')
             return True, print('Login Successfull', cu.fetchall())
     
-    def logout(user:str):
-        cu.execute(f'update userlogin set log = "0" where name = "{user}"')
-        mydb.commit()
+    def logout(*args: str):
+        for user in args:     
+            cu.execute(f'update userlogin set log = "0" where name = "{user}"')
+            mydb.commit()
         return True, print('Logout Successfull')
         
     def register(name, 
@@ -86,30 +84,32 @@ class user:
                  phone, 
                  email
                  ):
+        if name == "" or password == "" or confirm_password == "" or phone == "" or email == "":
+            return False, mb.showerror("Error", "Details Missing")
         cu.execute('Select * from userlogin')
         checkdata = cu.fetchall()
         if len(phone) != 10: 
             mb.showerror("Error", 
                          "Phone number must be 10 digits")
-            return
+            return False
         for i in checkdata:
             if i[0] == name:
                 mb.showerror("Error", 
                              "Username already exists")
-                return
+                return False
             elif i[2] == phone:
                 mb.showerror("Error", 
                              "Phone number already exists")
-                return
+                return False
             
             elif i[3] == email:
                 mb.showerror("Error", 
                              "Email already exists")
-                return
+                return False
         if confirm_password != password:
             mb.showerror("Error", 
                          "Confirmed Password do not match")
-            return
+            return False
         
         id = None
         cu.execute('Select id from userlogin')
@@ -133,9 +133,12 @@ class user:
                     email, 
                     5000.00, 
                     id, 
-                    "0"))   
+                    "0")) 
+        mb.showinfo(title="Successfull", message="User Registered.")  
         mydb.commit() 
-        return "Commited", print("Commited")
+        return True
+
+
 
 class admin:
     def __init__(self, 
@@ -264,8 +267,8 @@ class loginpage(tk.Frame):
         self.searchbtn = tk.Button(self, text="Search Trains", relief="groove", bg="#D0DBA9", command=lambda: search_cmd())
         self.searchbtn.place(x=230, y=115, height=20, width=100)
         
-        self.frolab = tk.Label(self, text="From Station", relief="flat", bg="#76ABAE").place(x=110, y=101, width = 115, height=10)
-        self.tolab = tk.Label(self, text="To Station", relief="flat", bg="#76ABAE").place(x=335, y=101, width = 115, height=10)
+        self.frolab = tk.Label(self, text="From Station", bg="#76ABAE").place(x=110, y=101, width = 115, height=11)
+        self.tolab = tk.Label(self, text="To Station", bg="#76ABAE").place(x=335, y=101, width = 115, height=11)
         self.stx = []
         self.stations=[]   
         g = basic.getdata('name, cords, code', 'stations')
@@ -325,8 +328,73 @@ class loginpage(tk.Frame):
         self.username.place(x = 600, y = 130, width=175)
         self.password = tkmisc.PlaceholderEntry(self, placeholder="Password")
         self.password.place(x = 600, y = 160, width=175)
+        def loginuser(name, paswd):
+            if name == "" or paswd == "":
+                mb.showerror(title="Invalid Credentials",
+                             message="Kindly provide the credentials properly.")
+                return
+            try:
+                if user.login(name, paswd):
+                    mb.showinfo(title="Successfull", message="Logged In!")
+            except:
+                mb.showerror(title="UnSuccessfull", message="Login Attempt Unsuccessfull!")
 
-
+        self.logbtn = tk.Button(self,
+                                text="Login",
+                                borderwidth=.5,
+                                command=lambda: loginuser(self.username.get_value(), self.password.get_value()))
+        self.logbtn.place(x = 600, y = 200, width = 175)
+        def registerpopup():
+            popup = tk.Toplevel(self)
+            popup.title("Register")
+            popup.geometry("350x500")
+            popup.resizable(False, False)
+            popup.grab_set()
+            
+            bg = Image.open("pxArt2.png")
+            bg = bg.resize((350, 500))
+            lbg = ImageTk.PhotoImage(bg)
+            bgimg = tk.Label(popup, image=lbg,
+                                  padx=0,
+                                  pady=0,
+                                  relief="solid")
+            bgimg.image = lbg
+            bgimg.place(x=0,y=0, height=500, width=350)
+            
+            label = tk.Label(popup,borderwidth=.5, text="Create New Account", anchor="center", font="bold", relief="solid", bg="lightblue")
+            label.place(x=20, y=10, width=310)
+            
+            username = tkmisc.PlaceholderEntry(popup, placeholder="Username")
+            username.place(x=40, y=50, width=270, height=20)
+            password = tkmisc.PlaceholderEntry(popup, placeholder="Password")
+            password.place(x=40, y=75, width=270, height=20)
+            cnpassword = tkmisc.PlaceholderEntry(popup, placeholder="Confirm Password")
+            cnpassword.place(x=40, y=100, width=270, height=20)
+            phone = tkmisc.PlaceholderEntry(popup, placeholder="Enter Mobile No.")
+            phone.place(x=40, y=125, widt=270, height=20)
+            email = tkmisc.PlaceholderEntry(popup, placeholder="Enter Email ID")
+            email.place(x=40, y=150, width=270, height=20)
+            
+            def registerfinal():
+                w = user.register(username.get_value(), password.get_value(), cnpassword.get_value(), phone.get_value(), email.get_value())
+                if w==True:
+                    print("Commited")
+                    popup.grab_release()
+                    popup.destroy()
+                    
+            reg = tk.Button(popup, text="Register", comman=registerfinal)
+            reg.place(x=40, y=175, width=270)
+            
+            def closepopup():
+                popup.grab_release()
+                popup.destroy()
+                
+        self.regbtn = tk.Button(self,
+                                text="Register New User",
+                                borderwidth=.5,
+                                command=registerpopup)
+        self.regbtn.place(x=600, y=230, width=175)
+        
     def select_option(self, event, wid, li):
         selected_item = li.get(tk.ANCHOR)
         if selected_item:
