@@ -221,7 +221,8 @@ class loginpage(tk.Frame):
         img = img.resize((900, 500))
         self.bgimage = ImageTk.PhotoImage(img)   
         self.bg = tk.Label(self, image=self.bgimage)
-        self.bg.place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg.place(x=0,     
+                      y=0, relwidth=1, relheight=1)
 
         img = Image.open("title.png")
         img = img.resize((900, 39))
@@ -338,13 +339,55 @@ class loginpage(tk.Frame):
                     mb.showinfo(title="Successfull", message="Logged In!")
             except:
                 mb.showerror(title="UnSuccessfull", message="Login Attempt Unsuccessfull!")
+                
+        def updateuserdata():
+            f = basic.getdatawhere(type="*",name="userlogin",where=f"log='{hex(uuid.getnode())}'")
+            self.regbtn.place_forget()
+            self.logbtn.place_forget()
+            self.username.place_forget()
+            self.password.place_forget()
+            self.loginlb.place_forget()
+            name=f[0][0]
+            mob=f[0][2]
+            mail=f[0][3]
+            uid=f[0][5]
+            bgclr = "#F7F4ED"
+            self.namelabel=tk.Label(self, text="Welcome, " + name.capitalize(), font="Consolas 12 bold", anchor="w", bg=bgclr)
+            self.namelabel.place(x=570, y=130, width=235)
+            self.uidlabel = tk.Label(self, text="Unique User ID: " + str(uid), font="Consolas 10", anchor="w", bg=bgclr)
+            self.uidlabel.place(x=570, y=160, width=235)
+            self.maillabel = tk.Label(self, text="Email: " + mail, font="Consolas 10", anchor="w", bg=bgclr)
+            self.maillabel.place(x=570, y=185, width=235)
+            self.upcomingjourneys = tk.Label(self, text="Upcoming Journeys: ", borderwidth=0, font="Consolas 10", 
+                                             anchor="w", bg=bgclr, 
+                                             relief="solid")
+            self.upcomingjourneys.place(x=570, y=210, width=235, height=20)
+            self.journeyslist = tk.Listbox(self, font="Consolas 10", 
+                                           relief="solid", 
+                                           highlightthickness=0,
+                                           activestyle='dotbox',
+                                           bg=bgclr)
+            #570
+            self.journeyslist.place(x=570, y=230, width=235, height=155)
+            
+            
+            self.refreshbtn = tk.Button(self, text="Refresh", command=lambda: print("Refresh Clicked"), bg="#D0DBA9") #command=lambda: refreshcmd())
+            self.refreshbtn.place(x=570, y=400, width=116)
 
+            self.logoutbtn=tk.Button(self, text="Logout", bg="#D0DBA9")#, command=lambda: logoutcmd())
+            self.logoutbtn.place(x=689, y=400, width=116)
+            
+        def logbtncmd():
+            loginuser(self.username.get_value(), self.password.get_value())
+            updateuserdata()
+            
         self.logbtn = tk.Button(self,
                                 text="Login",
                                 borderwidth=.5,
-                                command=lambda: loginuser(self.username.get_value(), self.password.get_value()))
+                                command=lambda:logbtncmd())
         self.logbtn.place(x = 600, y = 190, width = 175)
         
+            
         def registerpopup():
             popup = tk.Toplevel(self)
             popup.title("Register")
@@ -379,21 +422,9 @@ class loginpage(tk.Frame):
             def registerfinal():
                 w = user.register(username.get_value(), password.get_value(), cnpassword.get_value(), phone.get_value(), email.get_value())
                 if w==True:
-                    print("Commited")
-                    self.regbtn.place_forget()
-                    self.logbtn.place_forget()
-                    self.username.place_forget()
-                    self.password.place_forget()
-                    self.loginlb.place_forget()
                     user.login(username.get_value(), password.get_value())
-                    f = basic.getdatawhere("*", "userlogin", f"name='{username.get_value()}'")
-                    name=f[0][0]
-                    mob=f[0][2]
-                    mail=f[0][3]
-                    uid=f[0][4]
-                    self.namelabel=tk.Label(self, text=name.capitalize(), font="bold", anchor="w")
-                    self.namelabel.place(x=570, y=130, width=215)
-                    self.moblabel=tk.Label(self, )
+                    print("Commited")
+                    updateuserdata()
                     popup.grab_release()
                     popup.destroy()
                     
@@ -448,7 +479,8 @@ class loginpage(tk.Frame):
 class secondpage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="#00CCFF")
-
+        
+user.logout('saransh', 'Ram')
 if __name__ == "__main__":
     app = mainwindow()
     app.mainloop()
