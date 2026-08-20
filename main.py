@@ -13,6 +13,7 @@ mydb = connect(
     user="root",
     passwd="root",
     database="TRAINS")
+db=mydb
 cu = mydb.cursor()
 
 '''
@@ -43,6 +44,8 @@ class basic:
         k = cu.fetchall()
         return k  
 #--------------MISC--------------#
+
+        
 class user:
     def login(user:str, 
               password:str
@@ -367,7 +370,6 @@ class loginpage(tk.Frame):
                                            highlightthickness=0,
                                            activestyle='dotbox',
                                            bg=bgclr)
-            #570
             self.journeyslist.place(x=570, y=230, width=235, height=155)
             
             
@@ -479,8 +481,68 @@ class loginpage(tk.Frame):
 class secondpage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="#00CCFF")
+
+
+
+class ticket:
+    def __init__(self,
+                 trainno:str,
+                 uid:str,
+                 date:str,
+                 fromst:str,
+                 tost:str,
+                 ):
         
-user.logout('saransh', 'Ram')
-if __name__ == "__main__":
+        self.trainno = trainno
+        self.uid = uid
+        self.date = date
+        self.fromst = fromst
+        self.tost = tost
+    
+    def generate_ticket(self):
+        x = basic.getdatawhere(type="*", name="trst", where=f"number='{self.trainno}'")[0]
+        path=x[1]
+        ind = []
+        cost=x[2]
+        path=json.loads(path)
+        for i in path:
+            if self.fromst == i:
+                ind.append([path.index(i), i])
+            elif self.tost == i:
+                if ind != []:
+                    ind.append([path.index(i), i])
+                else:
+                    mb.showerror(title="Error", message="Invalid Stations Selected")
+        if len(ind) != 2:
+            mb.showerror(title="Error", message="Invalid Stations Selected")
+        
+        actual = path[ind[0][0]:ind[1][0]+1]
+        
+        data = basic.getdatawhere(type="*", name="userlogin", where=f'id="{self.uid}"')[0]
+        cu.execute(f'update userlogin set wallet = {data[4] - cost} where id = "{self.uid}"')
+        db.commit()
+
+        iternary = {
+            'uid': self.uid,
+            'trainno': self.trainno,
+            'cost': cost,
+            'date': self.date,
+            'path': ((ind[0][1], ind[1][1]), actual),
+            }
+        iternary = json.dumps(iternary)
+        cu.execute('insert into ticketiternary values (%s)', (iternary,))
+        db.commit()
+        print(basic.getdata(type="*", name="ticketiternary"))
+        
+        
+ticket = ticket(trainno="12345",
+              uid="240863027",
+              date="2024-06-15",
+              fromst="HJN",
+              tost="LLH")
+ticket.generate_ticket()
+        
+#user.logout('saransh', 'Ram')
+"""if __name__ == "__main__":
     app = mainwindow()
-    app.mainloop()
+    app.mainloop()"""
