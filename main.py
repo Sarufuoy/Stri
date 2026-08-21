@@ -530,19 +530,33 @@ class ticket:
             'path': ((ind[0][1], ind[1][1]), actual),
             }
         iternary = json.dumps(iternary)
-        cu.execute('insert into ticketiternary values (%s)', (iternary,))
+        cu.execute('insert into ticketiternary values (%s, %s, %s)', (self.uid, self.trainno, iternary))
         db.commit()
-        print(basic.getdata(type="*", name="ticketiternary"))
         
+    def cancel_ticket(self):
+        cu.execute(f'select * from ticketiternary where uid="{self.uid}" and trainno="{self.trainno}"')
+        data = cu.fetchall()
+        if data==[]:
+            mb.showerror(title="Error", message="No Data Found!")
+        else:
+            d = data[0][2]
+            d = json.loads(d)
+            cost = d['cost']
+            cost = random.randrange(cost, cost-100, -10)
+            up = basic.getdatawhere("wallet", 'userlogin', f'id={self.uid}')[0][0] + cost
+            cu.execute(f'Update userlogin set wallet={up} where id={self.uid}')
+            cu.execute(f"delete from ticketiternary where uid={self.uid}")
+            db.commit()
+            mb.showinfo(title="Done!", message=f"Your ticket has been cancelled!\nRefund Amount: {cost}")
+
         
 ticket = ticket(trainno="12345",
-              uid="240863027",
+              uid="837128056",
               date="2024-06-15",
               fromst="HJN",
               tost="LLH")
-ticket.generate_ticket()
-        
-#user.logout('saransh', 'Ram')
-"""if __name__ == "__main__":
+
+"""user.logout('saransh', 'Ram', 'Tharu', 'Megul', 'Buushit')
+if __name__ == "__main__":
     app = mainwindow()
     app.mainloop()"""
