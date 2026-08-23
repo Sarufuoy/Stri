@@ -7,11 +7,13 @@ from PIL import Image, ImageTk, ImageDraw
 import uuid
 import tkinter.font as tkFont
 import tkext as tkmisc
+from typing import Literal
+
 
 mydb = connect(
     host="localhost",
     user="root",
-    passwd="root",
+    passwd="saransh2009",
     database="TRAINS")
 db=mydb
 cu = mydb.cursor()
@@ -27,6 +29,110 @@ NAMES OF TABLES USED IN THIS PROJECT ARE:-
 '''
 
 #--------------MISC--------------#
+class ticket:
+    def __init__(self,
+                 trainno:str,
+                 uid:str,
+                 date:str,
+                 fromst:str,
+                 tost:str,
+                 ):
+        
+        self.trainno = trainno
+        self.uid = uid
+        self.date = date
+        self.fromst = fromst
+        self.tost = tost
+    
+    def generate_ticket(self):
+        data=basic.getdatawhere("iternary", "ticketiternary", f"uid={self.uid} and trainno={self.trainno}")
+        if data==[]:
+            x = basic.getdatawhere(type="*", name="trst", where=f"number='{self.trainno}'")[0]
+            path=x[1]
+            ind = []
+            cost=x[2]
+            path=json.loads(path)
+            for i in path:
+                if self.fromst == i:
+                    ind.append([path.index(i), i])
+                elif self.tost == i:
+                    if ind != []:
+                        ind.append([path.index(i), i])
+                    else:
+                        mb.showerror(title="Error", message="Invalid Stations Selected")
+            if len(ind) != 2:
+                mb.showerror(title="Error", message="Invalid Stations Selected")
+            
+            actual = path[ind[0][0]:ind[1][0]+1]
+            
+            data = basic.getdatawhere(type="*", name="userlogin", where=f'id="{self.uid}"')[0]
+            cu.execute(f'update userlogin set wallet = {data[4] - cost} where id = "{self.uid}"')
+            db.commit()
+
+            iternary = {
+                'uid': self.uid,
+                'trainno': self.trainno,
+                'cost': cost,
+                'date': self.date,
+                'path': ((ind[0][1], ind[1][1]), actual),
+                }
+            iternary = json.dumps(iternary)
+            cu.execute('insert into ticketiternary values (%s, %s, %s)', (self.uid, self.trainno, iternary))
+            db.commit()
+            return True
+        else:
+            return False, mb.showerror(title="Err", message="Ticket Already Exists!")
+        
+    def cancel_ticket(self):
+        cu.execute(f'select * from ticketiternary where uid="{self.uid}" and trainno="{self.trainno}"')
+        data = cu.fetchall()
+        if data==[]:
+            return False, mb.showerror(title="Error", message="No Data Found!")
+        else:
+            d = data[0][2]
+            d = json.loads(d)
+            cost = d['cost']
+            cost = random.randrange(cost, cost-100, -10)
+            up = basic.getdatawhere("wallet", 'userlogin', f'id={self.uid}')[0][0] + cost
+            cu.execute(f'Update userlogin set wallet={up} where id={self.uid}')
+            cu.execute(f"delete from ticketiternary where uid={self.uid}")
+            db.commit()
+            return True, mb.showinfo(title="Done!", message=f"Your ticket has been cancelled!\nRefund Amount: {cost}")
+    
+    def change_boarding(self, cur:str = None):
+        data = basic.getdatawhere("iternary", "ticketiternary", f"uid={self.uid} and trainno={self.trainno}")
+        if data == []:
+            return False, mb.showerror(title="Error", message="Can't find ticket!")
+        else:
+            data=data[0][0]
+            data=json.loads(data)
+            _board=data['path']
+            _board[0].pop(0)
+            _board[0].insert(0, cur)
+            x = basic.getdatawhere(type="*", name="trst", where=f"number='{self.trainno}'")[0]
+            path=x[1]
+            ind = []
+            cost=x[2]
+            path=json.loads(path)
+            for i in path:
+                if cur == i:
+                    ind.append([path.index(i), i])
+                elif self.tost == i:
+                    if ind != []:
+                        ind.append([path.index(i), i])
+                    else:
+                        mb.showerror(title="Error", message="Invalid Stations Selected")
+            if len(ind) != 2:
+                mb.showerror(title="Error", message="Invalid Stations Selected")
+            
+            _actual = path[ind[0][0]:ind[1][0]+1]
+            _fin = [[cur, _board[0][1]] ,_actual]
+            data['path']=_fin
+            _data = json.dumps(data)
+            cu.execute("update ticketiternary set iternary=%s where uid=%s and trainno=%s", (_data, self.uid, self.trainno))
+            db.commit()
+            return True, mb.showinfo(title="Done", message="Boarding Changed!")        
+
 class basic:
     def getdata(
                 type:str, 
@@ -44,36 +150,45 @@ class basic:
         k = cu.fetchall()
         return k  
 #--------------MISC--------------#
-
-        
 class user:
-    def login(user:str, 
-              password:str
-              ):
-        cu.execute('select log from userlogin where name = %s', (user,))
+    def login(user: str, password: str):
+        current_device = hex(uuid.getnode())
+
+        cu.execute(
+            'SELECT log FROM userlogin WHERE name = %s',
+            (user,)
+        )
+
         status = cu.fetchall()
-        for i in status:
-            if status == []:
-                break
-            if i[0] == hex(uuid.getnode()):
-                mb.showerror('Error',
-                             'Already logged in from another computer!')
-                return False
-            else:
-                continue  
-        cu.execute('Select * from userlogin where name = %s', (user,)) 
-        fetch = cu.fetchall()
-        if fetch == []:
-            print(fetch + ' != ' + password)
-            return False, print('Login Not Successfull')
-        elif password != fetch[0][1]:
-            print(fetch[0][1] + ' != ' + password)
-            return False, print('Login Not Successfull')
-        else:
-            cu.execute(f'update userlogin set log = "{hex(uuid.getnode())}" where name = "{user}"')
-            mydb.commit()
-            cu.execute(f'select * from userlogin where name = "{user}"')
-            return True, print('Login Successfull', cu.fetchall())
+
+        if not status:
+            return False
+
+        stored_device = status[0][0]
+
+        if stored_device != "0" and stored_device != current_device:
+            mb.showerror(
+                'Error',
+                'Already logged in from another computer!'
+            )
+            return False
+        elif stored_device==current_device:
+            mb.showerror(
+                "Error",
+                "Already Running Another Instance!")
+            return False
+
+        print(stored_device)
+        print(current_device)
+        
+        cu.execute(
+            'UPDATE userlogin SET log = %s WHERE name = %s',
+            (current_device, user)
+        )
+
+        db.commit()
+
+        return True
     
     def logout(*args: str):
         for user in args:     
@@ -332,18 +447,56 @@ class loginpage(tk.Frame):
         self.username.place(x = 600, y = 130, width=175)
         self.password = tkmisc.PlaceholderEntry(self, placeholder="Password")
         self.password.place(x = 600, y = 160, width=175)
+
         def loginuser(name, paswd):
             if name == "" or paswd == "":
-                mb.showerror(title="Invalid Credentials",
-                             message="Kindly provide the credentials properly.")
-                return
+                mb.showerror(
+                    title="Invalid Credentials",
+                    message="Kindly provide the credentials properly."
+                )
+                return False
+
+            test = basic.getdatawhere(
+                'name, password',
+                'userlogin',
+                f'name="{name}"'
+            )
+
+            if not test:
+                return False
+
+            if test[0][1] != paswd:
+                mb.showerror(
+                    title="Error",
+                    message="Password Incorrect!"
+                )
+                return False
+
             try:
-                if user.login(name, paswd):
-                    mb.showinfo(title="Successfull", message="Logged In!")
-            except:
-                mb.showerror(title="UnSuccessfull", message="Login Attempt Unsuccessfull!")
-                
-        def updateuserdata():
+                success = user.login(name, paswd)
+
+                if success:
+                    mb.showinfo(
+                        title="Successful",
+                        message="Logged In!"
+                    )
+                    return True
+                else:
+                    return False
+
+            except Exception as e:
+                print("LOGIN ERROR:", e)
+                mb.showerror(
+                    title="Unsuccessful",
+                    message="Login Attempt Unsuccessful!"
+                )
+                return False
+        
+        def updateuserdata(type: Literal["login", "register", "in"] = "register"):
+            if type=="login":
+                test = basic.getdatawhere('name, password, log', 'userlogin', f'name="{self.username.get_value()}"')
+                if test[0][1] != self.password.get_value():
+                    return False
             f = basic.getdatawhere(type="*",name="userlogin",where=f"log='{hex(uuid.getnode())}'")
             self.regbtn.place_forget()
             self.logbtn.place_forget()
@@ -362,14 +515,14 @@ class loginpage(tk.Frame):
             self.maillabel = tk.Label(self, text="Email: " + mail, font="Consolas 10", anchor="w", bg=bgclr)
             self.maillabel.place(x=570, y=185, width=235)
             self.upcomingjourneys = tk.Label(self, text="Upcoming Journeys: ", borderwidth=0, font="Consolas 10", 
-                                             anchor="w", bg=bgclr, 
-                                             relief="solid")
+                                            anchor="w", bg=bgclr, 
+                                            relief="solid")
             self.upcomingjourneys.place(x=570, y=210, width=235, height=20)
             self.journeyslist = tk.Listbox(self, font="Consolas 10", 
-                                           relief="solid", 
-                                           highlightthickness=0,
-                                           activestyle='dotbox',
-                                           bg=bgclr)
+                                        relief="solid", 
+                                        highlightthickness=0,
+                                        activestyle='dotbox',
+                                        bg=bgclr)
             self.journeyslist.place(x=570, y=230, width=235, height=155)
             
             
@@ -380,9 +533,14 @@ class loginpage(tk.Frame):
             self.logoutbtn.place(x=689, y=400, width=116)
             
         def logbtncmd():
-            loginuser(self.username.get_value(), self.password.get_value())
-            updateuserdata()
-            
+            success = loginuser(
+                self.username.get_value(),
+                self.password.get_value()
+            )
+
+            if success:
+                updateuserdata("login")
+                    
         self.logbtn = tk.Button(self,
                                 text="Login",
                                 borderwidth=.5,
@@ -482,81 +640,21 @@ class secondpage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="#00CCFF")
 
-
-
-class ticket:
-    def __init__(self,
-                 trainno:str,
-                 uid:str,
-                 date:str,
-                 fromst:str,
-                 tost:str,
-                 ):
-        
-        self.trainno = trainno
-        self.uid = uid
-        self.date = date
-        self.fromst = fromst
-        self.tost = tost
-    
-    def generate_ticket(self):
-        x = basic.getdatawhere(type="*", name="trst", where=f"number='{self.trainno}'")[0]
-        path=x[1]
-        ind = []
-        cost=x[2]
-        path=json.loads(path)
-        for i in path:
-            if self.fromst == i:
-                ind.append([path.index(i), i])
-            elif self.tost == i:
-                if ind != []:
-                    ind.append([path.index(i), i])
-                else:
-                    mb.showerror(title="Error", message="Invalid Stations Selected")
-        if len(ind) != 2:
-            mb.showerror(title="Error", message="Invalid Stations Selected")
-        
-        actual = path[ind[0][0]:ind[1][0]+1]
-        
-        data = basic.getdatawhere(type="*", name="userlogin", where=f'id="{self.uid}"')[0]
-        cu.execute(f'update userlogin set wallet = {data[4] - cost} where id = "{self.uid}"')
-        db.commit()
-
-        iternary = {
-            'uid': self.uid,
-            'trainno': self.trainno,
-            'cost': cost,
-            'date': self.date,
-            'path': ((ind[0][1], ind[1][1]), actual),
-            }
-        iternary = json.dumps(iternary)
-        cu.execute('insert into ticketiternary values (%s, %s, %s)', (self.uid, self.trainno, iternary))
-        db.commit()
-        
-    def cancel_ticket(self):
-        cu.execute(f'select * from ticketiternary where uid="{self.uid}" and trainno="{self.trainno}"')
-        data = cu.fetchall()
-        if data==[]:
-            mb.showerror(title="Error", message="No Data Found!")
-        else:
-            d = data[0][2]
-            d = json.loads(d)
-            cost = d['cost']
-            cost = random.randrange(cost, cost-100, -10)
-            up = basic.getdatawhere("wallet", 'userlogin', f'id={self.uid}')[0][0] + cost
-            cu.execute(f'Update userlogin set wallet={up} where id={self.uid}')
-            cu.execute(f"delete from ticketiternary where uid={self.uid}")
-            db.commit()
-            mb.showinfo(title="Done!", message=f"Your ticket has been cancelled!\nRefund Amount: {cost}")
-
-        
 ticket = ticket(trainno="12345",
-              uid="837128056",
+              uid="414608061",
               date="2024-06-15",
               fromst="HJN",
               tost="LLH")
 
-"""user.logout('saransh', 'Ram', 'Tharu', 'Megul', 'Buushit')
+
+def delete_win():
+    u=basic.getdata('name, log', 'userlogin')
+    for i in u:
+        if i[1] == hex(uuid.getnode()):
+            user.logout(i[0])
+    app.destroy()
+
 if __name__ == "__main__":
     app = mainwindow()
-    app.mainloop()"""
+    app.protocol('WM_DELETE_WINDOW',delete_win)
+    app.mainloop()
