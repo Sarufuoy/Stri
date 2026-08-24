@@ -8,7 +8,7 @@ import uuid
 import tkinter.font as tkFont
 import tkext as tkmisc
 from typing import Literal
-
+from datetime import date as _datetimedate
 
 mydb = connect(
     host="localhost",
@@ -32,19 +32,22 @@ NAMES OF TABLES USED IN THIS PROJECT ARE:-
 class ticket:
     def __init__(self,
                  trainno:str,
-                 uid:str,
-                 date:str,
                  fromst:str,
                  tost:str,
+                 uid:str='0'
                  ):
-        
         self.trainno = trainno
         self.uid = uid
-        self.date = date
+        self.date = _datetimedate.today()
         self.fromst = fromst
         self.tost = tost
-    
-    def generate_ticket(self):
+
+    def generate_ticket(self, get: Literal["create", "check"] = "create"):
+        if self.uid==None and get == "create":
+            mb.showerror(title="Error", 
+                         message="User not specified!\n Try logging In.."
+            )
+            return False
         data=basic.getdatawhere("iternary", "ticketiternary", f"uid={self.uid} and trainno={self.trainno}")
         if data==[]:
             x = basic.getdatawhere(type="*", name="trst", where=f"number='{self.trainno}'")[0]
@@ -59,26 +62,36 @@ class ticket:
                     if ind != []:
                         ind.append([path.index(i), i])
                     else:
-                        mb.showerror(title="Error", message="Invalid Stations Selected")
-            if len(ind) != 2:
-                mb.showerror(title="Error", message="Invalid Stations Selected")
-            
+                        mb.showerror(title="Error", message="Invalid Stations Selected.")
+            if len(ind) < 2:
+                mb.showerror(title="Error", message="Invalid Stations Selected.")
+                print(ind)
+                return False
             actual = path[ind[0][0]:ind[1][0]+1]
             
-            data = basic.getdatawhere(type="*", name="userlogin", where=f'id="{self.uid}"')[0]
-            cu.execute(f'update userlogin set wallet = {data[4] - cost} where id = "{self.uid}"')
-            db.commit()
+            if get=="create":
+                data = basic.getdatawhere(type="*", name="userlogin", where=f'id="{self.uid}"')[0]
+                cu.execute(f'update userlogin set wallet = {data[4] - cost} where id = "{self.uid}"')
+                db.commit()
 
-            iternary = {
+            _iternary = {
                 'uid': self.uid,
                 'trainno': self.trainno,
                 'cost': cost,
-                'date': self.date,
+                'date': self.date.isoformat(),
                 'path': ((ind[0][1], ind[1][1]), actual),
                 }
-            iternary = json.dumps(iternary)
-            cu.execute('insert into ticketiternary values (%s, %s, %s)', (self.uid, self.trainno, iternary))
-            db.commit()
+            iternary = json.dumps(_iternary)
+            if get=="create":
+                cu.execute('insert into ticketiternary values (%s, %s, %s)', (self.uid, self.trainno, iternary))
+                db.commit()
+            else:
+                _iternary = {
+                    'trainno':self.trainno,
+                    'path':((ind[0][1], ind[1][1]), actual),
+                    'cost':cost
+                }
+                return _iternary
             return True
         else:
             return False, mb.showerror(title="Err", message="Ticket Already Exists!")
@@ -122,7 +135,7 @@ class ticket:
                         ind.append([path.index(i), i])
                     else:
                         mb.showerror(title="Error", message="Invalid Stations Selected")
-            if len(ind) != 2:
+            if len(ind) != 2 or len(ind) < 2:
                 mb.showerror(title="Error", message="Invalid Stations Selected")
             
             _actual = path[ind[0][0]:ind[1][0]+1]
@@ -377,11 +390,6 @@ class loginpage(tk.Frame):
 
         self.toentry = tk.Entry(self)
         self.toentry.place(x=335, y=115, width=115, height=20)
-
-        def search_cmd():
-            if self.froentry.get() == "" or self.toentry.get() == "":
-                mb.showerror(title="Error!", message="No Stations Selected")
-                
         
         self.searchbtn = tk.Button(self, text="Search Trains", relief="groove", bg="#D0DBA9", command=lambda: search_cmd())
         self.searchbtn.place(x=230, y=115, height=20, width=100)
@@ -423,6 +431,106 @@ class loginpage(tk.Frame):
         self.toentry.bind(
             "<FocusOut>",
             lambda event: self.hide_dropdown(self.optionslist, None))
+
+        #--------TRAIN SEARCH--------#
+        self.resultscontainer = tk.Frame(self)
+        _h=285
+        self.resultscontainer.place(
+            x=110,
+            y=150,
+            width=340,
+            height=_h
+        )
+
+        self.resultscanvas = tk.Canvas(
+            self.resultscontainer,
+            highlightthickness=0
+        )
+
+        self.resultsscrollbar = tk.Scrollbar(
+            self.resultscontainer,
+            orient="vertical",
+            command=self.resultscanvas.yview
+        )
+
+        self.resultsframe = tk.Frame(
+            self.resultscanvas
+        )
+
+        self.resultsframe.bind(
+            "<Configure>",
+            lambda e: self.resultscanvas.configure(
+                scrollregion=self.resultscanvas.bbox("all")
+            )
+        )
+
+        self.resultscanvas.create_window(
+            (0, 0),
+            window=self.resultsframe,
+            anchor="nw",
+            width=320
+        )
+
+        self.resultscanvas.configure(
+            yscrollcommand=self.resultsscrollbar.set
+        )
+
+        self.resultscanvas.place(
+            x=0,
+            y=0,
+            width=320,
+            height=_h
+        )
+
+        self.resultsscrollbar.place(
+            x=320,
+            y=0,
+            width=20,
+            height=_h
+        )
+        self.resultscontainer.grid_rowconfigure(
+            0,
+            weight=1
+        )
+        self.resultscontainer.grid_columnconfigure(
+            0,
+            weight=1
+        )
+
+        def search_cmd():
+            if self.froentry.get() == "" or self.toentry.get() == "":
+                mb.showerror(title="Error!", message="No Stations Selected")
+                return False
+            fromcode = self.froentry.get().split(" - ")[1]
+            tocode = self.toentry.get().split(" - ")[1]
+            cu.execute("""
+                    SELECT DISTINCT a.trainno
+                    FROM train_stops a
+                    JOIN train_stops b
+                        ON a.trainno = b.trainno
+                    WHERE a.station_code=%s
+                    AND b.station_code=%s
+                    AND a.stop_order < b.stop_order;
+                    """,
+                    (
+                    fromcode, 
+                    tocode
+                )
+            )
+            data = cu.fetchall()
+            if data==[]:
+                mb.showerror(title="Error", message="No Trains Found!")
+                return False
+            _fin = {}
+            for i in data:
+                val = ticket(
+                    trainno=i[0],
+                    fromst=fromcode,
+                    tost=tocode
+                )
+                w = basic.getdatawhere('name', 'traininfo', f'fromnum="{i[0]}"')
+                _fin[i[0]] = (val.generate_ticket('check'), w)
+
         limg = Image.open("pxArt.png")
         limg = limg.resize((315,390))
         self.limg = ImageTk.PhotoImage(limg)
@@ -640,21 +748,14 @@ class secondpage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent, bg="#00CCFF")
 
-ticket = ticket(trainno="12345",
-              uid="414608061",
-              date="2024-06-15",
-              fromst="HJN",
-              tost="LLH")
-
-
-def delete_win():
-    u=basic.getdata('name, log', 'userlogin')
-    for i in u:
-        if i[1] == hex(uuid.getnode()):
-            user.logout(i[0])
-    app.destroy()
 
 if __name__ == "__main__":
+    def delete_win():
+        u=basic.getdata('name, log', 'userlogin')
+        for i in u:
+            if i[1] == hex(uuid.getnode()):
+                user.logout(i[0])
+        app.destroy()
     app = mainwindow()
     app.protocol('WM_DELETE_WINDOW',delete_win)
     app.mainloop()
