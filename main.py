@@ -530,6 +530,72 @@ class loginpage(tk.Frame):
                 )
                 w = basic.getdatawhere('name', 'traininfo', f'fromnum="{i[0]}"')
                 _fin[i[0]] = (val.generate_ticket('check'), w)
+            for train in _fin:
+                trainframe=tk.Frame(
+                    self.resultsframe,
+                    bd=2,
+                    relief="groove",
+                    width=320,
+                    height=100
+                )
+                trainframe.pack(
+                    padx=5,
+                    pady=5    
+                )
+                trainframe.pack_propagate(False)
+                tk.Label(
+                    trainframe,
+                    text=f"Train No: {train}"
+                ).place(x=10,
+                        y=10,
+                        height=10
+                    )
+                tk.Label(
+                    trainframe,
+                    text=f"{fromcode} → {tocode}"
+                ).place(
+                    x=200,
+                    y=10,
+                    height=10
+                )
+                try:
+                    name=_fin[train][1][0][0]
+                except:
+                    name="Name Not Found!"
+                tk.Label(
+                    trainframe,
+                    text=name
+                ).place(x=10,
+                        y=30,
+                        height=15
+                    )
+                time = basic.getdatawhere('departure', 'schedules', f'train_number={train}')[0][0]
+                time = time.split(':')
+                if int(time[0]) < 12:
+                    ap='am'
+                    l = time[0]
+                else:
+                    ap='pm'
+                    l = str(int(time[0]) - 12)
+                time = l + ":" + time[1] + f' {ap}'
+                tk.Label(
+                    trainframe,
+                    text=f"Departure: {time}"
+                ).place(x=10,
+                        y=50,
+                        height=10
+                    )
+                tk.Button(
+                    trainframe,
+                    text="Book",
+                    command=lambda trainno=train: booktrain(trainno)
+                ).place(x=10,
+                        y=70,
+                        height=20
+                    )
+                
+            def booktrain(t):
+                print(f"Selected Train : {t}")
 
         limg = Image.open("pxArt.png")
         limg = limg.resize((315,390))
