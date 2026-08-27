@@ -320,6 +320,7 @@ class mainwindow(tk.Tk):
         super().__init__()
         self.title('Train Ticket Reservation Window')
         self.geometry("900x500")
+        self.option_add("*Font", "Consolas 10")
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self.resizable(False, False)
@@ -444,17 +445,19 @@ class loginpage(tk.Frame):
 
         self.resultscanvas = tk.Canvas(
             self.resultscontainer,
-            highlightthickness=0
+            highlightthickness=0,
+            bg="#F8F3D9"
         )
 
         self.resultsscrollbar = tk.Scrollbar(
             self.resultscontainer,
             orient="vertical",
-            command=self.resultscanvas.yview
+            command=self.resultscanvas.yview,
         )
 
         self.resultsframe = tk.Frame(
-            self.resultscanvas
+            self.resultscanvas,
+            bg="#F8F3D9"
         )
 
         self.resultsframe.bind(
@@ -468,7 +471,7 @@ class loginpage(tk.Frame):
             (0, 0),
             window=self.resultsframe,
             anchor="nw",
-            width=320
+            width=320,
         )
 
         self.resultscanvas.configure(
@@ -530,13 +533,17 @@ class loginpage(tk.Frame):
                 )
                 w = basic.getdatawhere('name', 'traininfo', f'fromnum="{i[0]}"')
                 _fin[i[0]] = (val.generate_ticket('check'), w)
+            for widget in self.resultsframe.winfo_children():
+                widget.destroy()
+            bgclr = "#FFFDF6"
             for train in _fin:
                 trainframe=tk.Frame(
                     self.resultsframe,
                     bd=2,
                     relief="groove",
                     width=320,
-                    height=100
+                    height=100,
+                    bg=bgclr
                 )
                 trainframe.pack(
                     padx=5,
@@ -545,14 +552,16 @@ class loginpage(tk.Frame):
                 trainframe.pack_propagate(False)
                 tk.Label(
                     trainframe,
-                    text=f"Train No: {train}"
+                    text=f"Train No: {train}",
+                    bg=bgclr
                 ).place(x=10,
                         y=10,
                         height=10
                     )
                 tk.Label(
                     trainframe,
-                    text=f"{fromcode} → {tocode}"
+                    text=f"{fromcode} → {tocode}",
+                    bg=bgclr
                 ).place(
                     x=200,
                     y=10,
@@ -564,7 +573,8 @@ class loginpage(tk.Frame):
                     name="Name Not Found!"
                 tk.Label(
                     trainframe,
-                    text=name
+                    text=name,
+                    bg=bgclr
                 ).place(x=10,
                         y=30,
                         height=15
@@ -580,10 +590,11 @@ class loginpage(tk.Frame):
                 time = l + ":" + time[1] + f' {ap}'
                 tk.Label(
                     trainframe,
-                    text=f"Departure: {time}"
+                    text=f"First Departure: {time}",
+                    bg=bgclr
                 ).place(x=10,
                         y=50,
-                        height=10
+                        height=15
                     )
                 tk.Button(
                     trainframe,
@@ -591,8 +602,80 @@ class loginpage(tk.Frame):
                     command=lambda trainno=train: booktrain(trainno)
                 ).place(x=10,
                         y=70,
-                        height=20
+                        height=20,
+                        width=130
                     )
+                
+                tk.Button(
+                    trainframe,
+                    text="Info",
+                    command=lambda trainno=train: traininfo(trainno)
+                ).place(x=160,
+                        y=70,
+                        height=20,
+                        width=130
+                    )
+            
+            def traininfo(trainnum):
+                pop = tk.Toplevel(self,
+                                  bg="#FFF0BE")
+                pop.title("Traininfo")
+                pop.geometry("550x250")
+                pop.resizable(False, False)
+                pop.grab_set()
+
+                tk.Label(
+                    pop,
+                    text=_fin[trainnum][1][0][0],
+                    bg="#FFF0BE",
+                    font="courier 15 bold"
+                ).place(
+                    x=10,
+                    y=10    
+                )
+                sc = basic.getdatawhere('path', 'trst', f'number={int(trainnum)}')[0][0]
+                sc= json.loads(sc)
+                sn = basic.getdatawhere('name', 'stations', f'code="{sc[0]}" or code="{sc[-1]}"')
+                start = sc[0]
+                end = sc[-1]
+                tk.Label(
+                    pop,
+                    text=f"Starts at:",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=10,
+                    y=40
+                )
+                tk.Label(
+                    pop,
+                    text=f"{sn[0][0]} - {start}",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=150,
+                    y=40
+                )
+                tk.Label(
+                    pop,
+                    text=f"Ends at:",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=10,
+                    y=60
+                )
+                tk.Label(
+                    pop,
+                    text=f"{sn[1][0]} - {end}",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=150,
+                    y=60
+                )
+                
+                
                 
             def booktrain(t):
                 print(f"Selected Train : {t}")
