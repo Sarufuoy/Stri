@@ -338,7 +338,7 @@ class mainwindow(tk.Tk):
             frame.grid(row=0, column=0, sticky='nsew')
         self.show_frame("loginpage")
 
-    def show_frame(self, frname):
+    def show_frame(self, frname: Literal["loginpage", "secondpage"]):
         frame = self.frames[frname]
         frame.tkraise()
 
@@ -392,10 +392,19 @@ class loginpage(tk.Frame):
         self.toentry = tk.Entry(self)
         self.toentry.place(x=335, y=115, width=115, height=20)
         
-        self.searchbtn = tk.Button(self, text="Search Trains", relief="groove", bg="#D0DBA9", command=lambda: search_cmd())
+        self.searchbtn = tk.Button(self, 
+                                   text="Search Trains", 
+                                   relief="groove", 
+                                   bg="#D0DBA9",
+                                   command=lambda: search_cmd())
         self.searchbtn.place(x=230, y=115, height=20, width=100)
         
-        self.frolab = tk.Label(self, text="From Station", bg="#76ABAE").place(x=110, y=101, width = 115, height=11)
+        self.frolab = tk.Label(self, 
+                               text="From Station", 
+                               bg="#76ABAE").place(x=110, 
+                                                   y=101, 
+                                                   width = 115,
+                                                   height=11)
         self.tolab = tk.Label(self, text="To Station", bg="#76ABAE").place(x=335, y=101, width = 115, height=11)
         self.stx = []
         self.stations=[]   
@@ -599,7 +608,7 @@ class loginpage(tk.Frame):
                 tk.Button(
                     trainframe,
                     text="Book",
-                    command=lambda trainno=train: booktrain(trainno)
+                    command=lambda trainno=train: booktrain(trainno, fromcode, tocode)
                 ).place(x=10,
                         y=70,
                         height=20,
@@ -609,24 +618,24 @@ class loginpage(tk.Frame):
                 tk.Button(
                     trainframe,
                     text="Info",
-                    command=lambda trainno=train: traininfo(trainno)
+                    command=lambda trainno=train: traininfo(trainno, fromcode, tocode)
                 ).place(x=160,
                         y=70,
                         height=20,
                         width=130
                     )
             
-            def traininfo(trainnum):
+            def traininfo(trainnum, fro, to):
                 pop = tk.Toplevel(self,
                                   bg="#FFF0BE")
                 pop.title("Traininfo")
-                pop.geometry("550x250")
+                pop.geometry("550x160")
                 pop.resizable(False, False)
                 pop.grab_set()
 
                 tk.Label(
                     pop,
-                    text=_fin[trainnum][1][0][0],
+                    text=f"{_fin[trainnum][1][0][0]} ({trainnum})",
                     bg="#FFF0BE",
                     font="courier 15 bold"
                 ).place(
@@ -635,7 +644,17 @@ class loginpage(tk.Frame):
                 )
                 sc = basic.getdatawhere('path', 'trst', f'number={int(trainnum)}')[0][0]
                 sc= json.loads(sc)
-                sn = basic.getdatawhere('name', 'stations', f'code="{sc[0]}" or code="{sc[-1]}"')
+                sn = basic.getdatawhere('name', 'stations', f'code="{sc[0]}"')
+                sn2 = basic.getdatawhere('name', 'stations', f'code="{sc[-1]}"')
+                x = ticket(
+                        trainno=trainnum,
+                        fromst=fro,
+                        tost=to
+                    ).generate_ticket('check')
+                
+                nx=220
+                cx=475
+                
                 start = sc[0]
                 end = sc[-1]
                 tk.Label(
@@ -649,15 +668,6 @@ class loginpage(tk.Frame):
                 )
                 tk.Label(
                     pop,
-                    text=f"{sn[0][0]} - {start}",
-                    bg="#FFF0BE",
-                    font="courier 11"
-                ).place(
-                    x=150,
-                    y=40
-                )
-                tk.Label(
-                    pop,
                     text=f"Ends at:",
                     bg="#FFF0BE",
                     font="courier 11"
@@ -667,17 +677,116 @@ class loginpage(tk.Frame):
                 )
                 tk.Label(
                     pop,
-                    text=f"{sn[1][0]} - {end}",
+                    text=f"{sn[0][0]}",
                     bg="#FFF0BE",
                     font="courier 11"
                 ).place(
-                    x=150,
+                    x=nx,
+                    y=40
+                )
+                tk.Label(
+                    pop,
+                    text=f"{sn2[0][0]}",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=nx,
                     y=60
                 )
+                tk.Label(
+                    pop,
+                    text=f'{start}',
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=cx,
+                    y=40
+                )
+                tk.Label(
+                    pop,
+                    text=f'{end}',
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=cx,
+                    y=60
+                )
+                tk.Label(
+                    pop,
+                    text=f"{fro} → {to}",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=nx,
+                    y=100
+                )
+                tk.Label(
+                    pop,
+                    text=f"Train No.:",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=10,
+                    y=80
+                )
+                tk.Label(
+                    pop,
+                    text=f"{trainnum}",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=nx,
+                    y=80
+                )
+                tk.Label(
+                    pop,
+                    text=f"Selected:",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=10,
+                    y=100
+                )
+                tk.Label(
+                    pop,
+                    text=f"Ticket Cost:",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=10,
+                    y=120
+                )
+                tk.Label(
+                    pop,
+                    text=f"₹{x['cost']}",
+                    bg="#FFF0BE",
+                    font="courier 11"
+                ).place(
+                    x=nx,
+                    y=120
+                )
+                l = 80
+                for i in range(3):
+                    tk.Label(
+                        pop,
+                        text=f"---",
+                        bg="#FFF0BE",
+                        font="courier 11"
+                    ).place(
+                        x=cx,
+                        y=l
+                    )
+                    l+=20
                 
                 
-                
-            def booktrain(t):
+            def booktrain(t, fro, to):
+                if basic.getdatawhere('log', 'userlogin', f'log="{hex(uuid.getnode())}"') == []:
+                    mb.showerror(
+                        title="Error",
+                        message="Can't find user data\nTry Logging in!"
+                    )
+                else:
+                    self.controller.show_frame("secondpage")
                 print(f"Selected Train : {t}")
 
         limg = Image.open("pxArt.png")
@@ -894,8 +1003,40 @@ class loginpage(tk.Frame):
     
 
 class secondpage(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent, bg="#00CCFF")
+    def __init__(self, 
+                 parent, 
+                 controller
+                ):
+        super().__init__(parent, 
+                         bg="#00CCFF"
+                        )
+        self.controller = controller
+        img = Image.open("vb.png")
+        img = img.resize((900, 500))
+        self.bgimage = ImageTk.PhotoImage(img)   
+        self.bg = tk.Label(self, 
+                           image=self.bgimage
+                           )
+        self.bg.place(x=0,     
+                      y=0, 
+                      relwidth=1, 
+                      relheight=1)
+
+        img = Image.open("title.png")
+        img = img.resize((900, 39))
+
+        self.titleimg = ImageTk.PhotoImage(img)
+
+        self.title = tk.Label(self, image = self.titleimg,
+                              padx=0,
+                              pady=0,
+                              borderwidth=0,
+                              relief="flat",
+                              highlightthickness=1,
+                              highlightbackground="black",
+                              )
+        self.title.place(x=0, y=0)
+        
 
 
 if __name__ == "__main__":
@@ -906,5 +1047,7 @@ if __name__ == "__main__":
                 user.logout(i[0])
         app.destroy()
     app = mainwindow()
-    app.protocol('WM_DELETE_WINDOW',delete_win)
+    app.protocol('WM_DELETE_WINDOW',
+                 delete_win
+                )
     app.mainloop()
