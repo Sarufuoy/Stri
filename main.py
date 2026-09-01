@@ -7,14 +7,21 @@ from PIL import Image, ImageTk, ImageDraw
 import uuid
 import tkinter.font as tkFont
 import tkext as tkmisc
-from typing import Literal
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 from datetime import date as _datetimedate
 
-mydb = connect(
-    host="localhost",
-    user="root",
-    passwd="saransh2009",
-    database="TRAINS")
+_pass = str(input("Enter MySQL Database Password: "))
+try:
+    mydb = connect(
+        host="localhost",
+        user="root",
+        passwd=_pass,
+        database="TRAINS")
+except:
+    print("Error Connecting to Database!")
 db=mydb
 cu = mydb.cursor()
 
