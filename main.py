@@ -325,6 +325,7 @@ class traindata:
 class mainwindow(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.searched_train = None
         self.title('Train Ticket Reservation Window')
         self.geometry("900x500")
         self.option_add("*Font", "Consolas 10")
@@ -345,6 +346,7 @@ class mainwindow(tk.Tk):
             frame.grid(row=0, column=0, sticky='nsew')
         self.show_frame("loginpage")
 
+    
     def show_frame(self, frname: Literal["loginpage", "secondpage"]):
         frame = self.frames[frname]
         frame.tkraise()
@@ -793,8 +795,25 @@ class loginpage(tk.Frame):
                         message="Can't find user data\nTry Logging in!"
                     )
                 else:
-                    self.controller.show_frame("secondpage")
-                print(f"Selected Train : {t}")
+                    book = tk.Toplevel(self)
+                    book.title("Booking Window")
+                    book.geometry("700x400")
+                    book.resizable(False, False)
+                    book.grab_set()
+                    img = Image.open("bookbgb.jpg")
+                    img = img.resize((700, 400))
+                    book.bgimage = ImageTk.PhotoImage(img)
+                    bg = tk.Label(
+                        book,
+                        image=book.bgimage
+                    )
+                    bg.place(
+                        x=0,
+                        y=0,
+                        relwidth=1,
+                        relheight=1
+                    )
+
 
         limg = Image.open("pxArt.png")
         limg = limg.resize((315,390))
@@ -1044,6 +1063,8 @@ class secondpage(tk.Frame):
                               )
         self.title.place(x=0, y=0)
         
+        self.Label = tk.Label(self, text=self.controller.searched_train, font="Consolas 12 bold", bg="#00CCFF")
+        self.Label.place(x=10, y=50)
 
 
 if __name__ == "__main__":
